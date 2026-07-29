@@ -55,7 +55,9 @@ Estimated Lab Time: 9 minutes
     > </copy>
     > ```
     >
-    > The first query returns **nothing** — no menu item contains all three words. The second returns **noise**, in alphabetical order, because keyword matching has no notion of "closer". Nothing, or noise, with no way to rank by closeness: that gap is the entire reason AI Vector Search exists. Then ask a proctor to help get the model loaded so you can run the real thing.
+    > The first query returns **nothing** — no menu item contains all three words. The second returns exactly **one row: Beef Chow Fun** — the one dish on the menu that is emphatically *not* vegetarian. It matched on "noodles" and keyword search has no way to know that "wok-seared beef" disqualifies it. Meanwhile the dish you actually wanted, the Szechuan Tofu Stir-Fry, never appears at all: its description says "fiery" not "spicy", and "no meat" not "vegetarian".
+    >
+    > Nothing, or the wrong answer, with no way to rank by closeness. That gap is the entire reason AI Vector Search exists — and it is the same gap Task 2 closes with one `VECTOR_DISTANCE`. Then ask a proctor to help get the model loaded so you can run the real thing.
 
 ## Task 2: Search by Meaning
 

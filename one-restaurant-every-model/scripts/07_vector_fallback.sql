@@ -20,8 +20,11 @@ AND    (LOWER(item_name || ' ' || description) LIKE '%spicy%'
    AND  LOWER(item_name || ' ' || description) LIKE '%vegetarian%'
    AND  LOWER(item_name || ' ' || description) LIKE '%noodle%');
 
--- 2. Loosen it to ANY of the words - now you get noise instead of nothing:
---    everything with "spicy" in it, ranked by nothing in particular.
+-- 2. Loosen it to ANY of the words. This returns exactly ONE row - Beef Chow
+--    Fun - the one dish that is emphatically NOT vegetarian. It matched on
+--    "noodles"; keyword search cannot know that "wok-seared beef" disqualifies
+--    it. The dish you wanted (Szechuan Tofu Stir-Fry) never appears: its
+--    description says "fiery" not "spicy", and "no meat" not "vegetarian".
 SELECT item_name, price
 FROM   item
 WHERE  active
