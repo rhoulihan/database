@@ -2,7 +2,7 @@
 
 ## Introduction
 
-"Find me something like spicy vegetarian noodles" is a question about *meaning*, not keywords. In this lab you add AI Vector Search to the **same** `item` table you built in Lab 4 — with an ONNX embedding model that runs *inside* the database — and prove the claim vector-sync pipelines can't make: a brand-new item is findable by meaning **on the same commit**.
+"Find me a vegetarian dish with some heat" is a question about *meaning*, not keywords — and on this menu, not one item literally contains either word. In this lab you add AI Vector Search to the **same** `item` table you built in Lab 4 — with an ONNX embedding model that runs *inside* the database — and prove the claim vector-sync pipelines can't make: a brand-new item is findable by meaning **on the same commit**.
 
 Then the finale: one SQL statement that walks the co-order graph from Lab 7, joins the relational truth from Lab 4, and ranks by vector distance — planned as **one tree by one optimizer**. That is the difference between a multi-model checkbox and a converged guarantee.
 
@@ -41,21 +41,19 @@ Estimated Lab Time: 9 minutes
     > SELECT item_name, price
     > FROM   item
     > WHERE  active
-    > AND    (LOWER(item_name || ' ' || description) LIKE '%spicy%'
-    >    AND  LOWER(item_name || ' ' || description) LIKE '%vegetarian%'
-    >    AND  LOWER(item_name || ' ' || description) LIKE '%noodle%');
+    > AND    (LOWER(item_name || ' ' || description) LIKE '%vegetarian%'
+    >     OR  LOWER(item_name || ' ' || description) LIKE '%heat%');
     >
     > SELECT item_name, price
     > FROM   item
     > WHERE  active
     > AND    (LOWER(item_name || ' ' || description) LIKE '%spicy%'
-    >     OR  LOWER(item_name || ' ' || description) LIKE '%vegetarian%'
     >     OR  LOWER(item_name || ' ' || description) LIKE '%noodle%')
     > ORDER  BY item_name;
     > </copy>
     > ```
     >
-    > The first query returns **nothing** — no menu item contains all three words. The second returns exactly **one row: Beef Chow Fun** — the one dish on the menu that is emphatically *not* vegetarian. It matched on "noodles" and keyword search has no way to know that "wok-seared beef" disqualifies it. Meanwhile the dish you actually wanted, the Szechuan Tofu Stir-Fry, never appears at all: its description says "fiery" not "spicy", and "no meat" not "vegetarian".
+    > The first query is Task 2's question asked with keywords, and it returns **zero rows**. Nothing on this menu literally says "vegetarian" or "heat" — the dish you want says "vegetables" and "fiery". The second loosens the terms and returns exactly **one row: Beef Chow Fun**, the single dish that is emphatically *not* vegetarian; it matched "noodle", and keyword search has no way to know that "wok-seared beef" disqualifies it.
     >
     > Nothing, or the wrong answer, with no way to rank by closeness. That gap is the entire reason AI Vector Search exists — and it is the same gap Task 2 closes with one `VECTOR_DISTANCE`. Then ask a proctor to help get the model loaded so you can run the real thing.
 
@@ -69,13 +67,17 @@ Estimated Lab Time: 9 minutes
     FROM   item
     WHERE  active
     ORDER  BY VECTOR_DISTANCE(desc_vec,
-             VECTOR_EMBEDDING(menu_model USING 'spicy vegetarian noodles' AS data),
+             VECTOR_EMBEDDING(menu_model USING 'a vegetarian dish with some heat' AS data),
              COSINE)
     FETCH FIRST 5 ROWS ONLY;
     </copy>
     ```
 
-    **What you should see:** **Szechuan Tofu Stir-Fry** at the top — zero shared keywords with your query — filtered by the relational `active` predicate in the same statement.
+    **What you should see:** **Szechuan Tofu Stir-Fry** at the top, filtered by the relational `active` predicate in the same statement.
+
+    ![Semantic search result: Szechuan Tofu Stir-Fry ranked first](images/semantic-search-result.png " ")
+
+    Look at what just happened. Your query said *vegetarian* and *heat*. That dish's description says *"Crispy tofu, fiery chili-garlic sauce, seasonal vegetables, no meat"* — it contains **neither word**. Not "vegetarian" (it says "vegetables", a different word), not "heat" (it says "fiery"). A keyword search for those terms returns **zero rows** against this menu. The vector search puts the right dish first, and the second-place result is the Carnitas Taco Plate — also spicy, also not what you asked for, and correctly ranked below.
 
     **Why there is no index here, and when you would add one.** What you just ran is an *exact* search: the database compared your query vector against every row's vector and sorted by distance. On a seven-item menu that is the right answer and it is instant — an index would be pure overhead.
 
@@ -121,7 +123,13 @@ Estimated Lab Time: 9 minutes
     </copy>
     ```
 
-    **What you should see:** **Vegan Dan Dan Noodles** now in the results — in the live validation run it took the **#1 spot** (it is semantically closer to the probe than anything else on the menu) — committed and findable by meaning in the same breath. No sync window, no backfill job, no eventually-consistent index. Fresh on the commit.
+    Note this search uses a different probe from Task 2 — `'spicy vegetarian noodles'` — because the dish you just added really *is* a noodle dish, and the question is whether the database can find it the instant it exists.
+
+    **What you should see:** **Vegan Dan Dan Noodles at the top**, ahead of everything that was already on the menu — committed and findable by meaning in the same breath. No sync window, no backfill job, no eventually-consistent index. Fresh on the commit.
+
+    ![Freshness proof: Vegan Dan Dan Noodles ranked first in the same script that inserted it](images/freshness-result.png " ")
+
+    That is the beat no bolt-on vector store can match. In a sync-pipeline architecture the row is committed here and the embedding lands in the index *later* — seconds if you are lucky, minutes if you are not — and until it does, your newest item is invisible to the search that is supposed to sell it.
 
 ## Task 4: The One-Statement Finale
 
@@ -156,14 +164,16 @@ Estimated Lab Time: 9 minutes
 
     **What you should see:** three rows. Customer `c_1` belongs to the noodle cohort you seeded in Lab 7, so their ring is **Szechuan Tofu Stir-Fry**, **Beef Chow Fun** and **Garden Salad** — and the two Wok dishes both rank above the Garden Salad, which shares nothing with the probe.
 
-    Now look at which of the two came first, because the probe was chosen to be genuinely hard. `'vegan-friendly noodles'` pulls in two directions, and each dish satisfies exactly one half of it:
+    The order of the top two is worth a moment, because the probe was chosen to be genuinely hard. `'vegan-friendly noodles'` pulls in two directions, and each dish satisfies exactly one half of it:
 
     | Dish | Description the model embedded | Matches |
     | :-- | :-- | :-- |
-    | Szechuan Tofu Stir-Fry | "Crispy tofu, fiery chili-garlic sauce, seasonal vegetables, **no meat**" | *vegan-friendly*, but never says noodles |
     | Beef Chow Fun | "**Wide rice noodles**, wok-seared **beef**, scallion" | *noodles*, but explicitly not vegan |
+    | Szechuan Tofu Stir-Fry | "Crispy tofu, fiery chili-garlic sauce, seasonal vegetables, **no meat**" | *vegan-friendly*, but never says noodles |
 
-    Neither is a keyword match for the whole phrase — one is half right on meaning, the other half right on form. Whichever the model puts first, the interesting part is that it *had* to weigh those two halves against each other, which is precisely what a keyword index cannot do. Ask yourself which you'd have ranked first, then see whether you agree with the model.
+    **Beef Chow Fun comes first** — the model weighed "noodles" more heavily than "vegan-friendly". You may well disagree with that judgement, and that is the point worth taking away: the ranking is a *model's* opinion about meaning, not a lookup. It is reproducible, it is explainable (one dish matches the noun, the other the qualifier), and it is exactly the kind of trade-off a keyword index cannot even represent — it would have returned the beef dish alone, or nothing.
+
+    If you want the vegan constraint to be non-negotiable rather than a hint, that is what the `WHERE` clause is for — and you already have one in this statement. Semantics rank; predicates decide.
 
     The recommendation is personal (it came from *this* customer's orders), current (it came from the canonical `item` table), and semantic (it was ranked by meaning) — in one statement.
 

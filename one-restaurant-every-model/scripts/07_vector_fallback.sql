@@ -10,26 +10,22 @@
 -- What you lose: semantic search. What you keep: the ability to finish the lab
 -- and to SEE what the embedding was buying you.
 
--- 1. Keyword search - what you get WITHOUT vectors.
---    The probe 'spicy vegetarian noodles' shares no keyword with the dish that
---    actually satisfies it, so this returns nothing.
+-- 1. Task 2's question asked with keywords: 'a vegetarian dish with some heat'.
+--    Returns ZERO ROWS. Nothing on this menu literally says "vegetarian" or
+--    "heat" - the dish you want says "vegetables" and "fiery".
 SELECT item_name, price
 FROM   item
 WHERE  active
-AND    (LOWER(item_name || ' ' || description) LIKE '%spicy%'
-   AND  LOWER(item_name || ' ' || description) LIKE '%vegetarian%'
-   AND  LOWER(item_name || ' ' || description) LIKE '%noodle%');
+AND    (LOWER(item_name || ' ' || description) LIKE '%vegetarian%'
+    OR  LOWER(item_name || ' ' || description) LIKE '%heat%');
 
--- 2. Loosen it to ANY of the words. This returns exactly ONE row - Beef Chow
---    Fun - the one dish that is emphatically NOT vegetarian. It matched on
---    "noodles"; keyword search cannot know that "wok-seared beef" disqualifies
---    it. The dish you wanted (Szechuan Tofu Stir-Fry) never appears: its
---    description says "fiery" not "spicy", and "no meat" not "vegetarian".
+-- 2. Loosen the terms. Returns exactly ONE row - Beef Chow Fun - the single
+--    dish that is emphatically NOT vegetarian. It matched "noodle"; keyword
+--    search cannot know that "wok-seared beef" disqualifies it.
 SELECT item_name, price
 FROM   item
 WHERE  active
 AND    (LOWER(item_name || ' ' || description) LIKE '%spicy%'
-    OR  LOWER(item_name || ' ' || description) LIKE '%vegetarian%'
     OR  LOWER(item_name || ' ' || description) LIKE '%noodle%')
 ORDER  BY item_name;
 

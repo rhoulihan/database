@@ -204,6 +204,8 @@ Estimated Lab Time: 7 minutes
 
     **What you should see:** **French Fries on top with 48**, then Garden Salad with 16 — and *nothing else*. The kiosk upsell as a two-hop MATCH, over documents your own mongosh session wrote three minutes ago, joined to the relational item table, on one engine.
 
+    ![Co-order result: French Fries 48, Garden Salad 16](images/coorder-result.png " ")
+
     That short result list is the cohort design paying off: the only people who order a cheeseburger are the burger crowd, so the only things that can come back are what the burger crowd eats. A graph over undifferentiated customers would have returned the whole menu in popularity order.
 
     ![The MATCH arrows are just joins — each element becomes a row source in your plan](images/match-to-plan.svg "MATCH to plan")
