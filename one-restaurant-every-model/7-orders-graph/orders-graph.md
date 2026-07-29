@@ -113,6 +113,7 @@ Estimated Lab Time: 7 minutes
         }
       }
     }
+    db.orders.deleteMany({});
     db.orders.insertMany(orders);
     print("orders inserted: " + db.orders.countDocuments({}) + " (of " + ORDERS_TOTAL + ")");
     </copy>

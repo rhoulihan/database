@@ -55,5 +55,7 @@ for (const cohort of COHORTS) {
     }
   }
 }
+// Re-run safe: fixed _id values would collide on a second run.
+db.orders.deleteMany({});
 db.orders.insertMany(orders);
 print("orders inserted: " + db.orders.countDocuments({}) + " (of " + ORDERS_TOTAL + ")");

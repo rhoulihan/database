@@ -205,6 +205,8 @@ Estimated Lab Time: 9 minutes
     </copy>
     ```
 
+    > **Run those two statements together, as one script.** Database Actions executes each request in its own session, so if you run `EXPLAIN PLAN` on its own and then `dbms_xplan.display()` separately, the second one returns `Error: cannot fetch last explain plan` — the plan table it reads is session-scoped and already gone.
+
     **What you should see:** one plan tree. Use the annotated expected-plan figure to find three things in yours: **(1)** the scans of the graph tables (`ORDER_ITEM` / `ORD` — that's the GRAPH_TABLE match), **(2)** the access of the canonical `ITEM` table (RELATIONAL), **(3)** the `SORT ORDER BY STOPKEY` at the top — the vector top-k (VECTOR). Exact rows vary with statistics; the three elements in a single tree do not. Three models, row sources in **one tree**, planned by **one optimizer**, over data a Mongo driver wrote.
 
     ![Annotated expected plan — graph, relational, and vector in one tree](images/capstone-plan.svg "Annotated expected plan")
