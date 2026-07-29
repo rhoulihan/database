@@ -152,7 +152,18 @@ Estimated Lab Time: 9 minutes
     </copy>
     ```
 
-    **What you should see:** three rows — customer `c_1` belongs to the noodle cohort you seeded in Lab 7, so their ring is **Szechuan Tofu Stir-Fry**, **Beef Chow Fun** and **Garden Salad** — with the **Szechuan Tofu Stir-Fry ranked first**. It is the only vegan dish of the three and the closest thing on their menu to noodles, and nothing in the query said either of those words. The recommendation is personal (it came from *this* customer's orders), current (it came from the canonical `item` table), and semantic (it was ranked by meaning) — in one statement.
+    **What you should see:** three rows. Customer `c_1` belongs to the noodle cohort you seeded in Lab 7, so their ring is **Szechuan Tofu Stir-Fry**, **Beef Chow Fun** and **Garden Salad** — and the two Wok dishes both rank above the Garden Salad, which shares nothing with the probe.
+
+    Now look at which of the two came first, because the probe was chosen to be genuinely hard. `'vegan-friendly noodles'` pulls in two directions, and each dish satisfies exactly one half of it:
+
+    | Dish | Description the model embedded | Matches |
+    | :-- | :-- | :-- |
+    | Szechuan Tofu Stir-Fry | "Crispy tofu, fiery chili-garlic sauce, seasonal vegetables, **no meat**" | *vegan-friendly*, but never says noodles |
+    | Beef Chow Fun | "**Wide rice noodles**, wok-seared **beef**, scallion" | *noodles*, but explicitly not vegan |
+
+    Neither is a keyword match for the whole phrase — one is half right on meaning, the other half right on form. Whichever the model puts first, the interesting part is that it *had* to weigh those two halves against each other, which is precisely what a keyword index cannot do. Ask yourself which you'd have ranked first, then see whether you agree with the model.
+
+    The recommendation is personal (it came from *this* customer's orders), current (it came from the canonical `item` table), and semantic (it was ranked by meaning) — in one statement.
 
 2. Before you read your first plan, thirty seconds of anatomy:
 
